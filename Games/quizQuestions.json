@@ -1,0 +1,14 @@
+[
+  {
+    "question": "Which is the most abundant gas in the earth's atmosphere?",
+    "answer": ["Nitrogen", "N", "N2"]
+  },
+  {
+    "question": "How many bones are present in a healthy human's body?",
+    "answer": ["206", "Two Hundred Six"]
+  },
+  {
+    "question": "Which is the strongest bone in the human body?",
+    "answer": ["femur"]
+  }
+]
