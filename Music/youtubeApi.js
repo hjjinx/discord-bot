@@ -13,12 +13,11 @@ module.exports.search = async function(query) {
   //   console.log(elem);
   // });
   var urlArr = [];
-  html = await $(`div.yt-lockup-thumbnail`).each((i, elem) => {
-    for (child of elem.children)
-      if (child.name == "a") {
-        urlArr.push(child.attribs.href);
-        break;
-      }
+  html = await $(`h3.yt-lockup-title`).each((i, elem) => {
+    const child = elem.children[0];
+    urlArr.push({ href: child.attribs.href, title: child.attribs.title });
+
+    if (i == 4) return false;
   });
   return urlArr;
 };

@@ -87,12 +87,12 @@ Status: \`\` Playing \`\``
             dispatcher = await connection.playFile(
               `${rootMusicDir}${matching[0]}`
             );
-            dispatcher.on("end", end => {
+            dispatcher.on("finish", end => {
               song.content = song.content.split(`\`\``);
               song.content[3] = "Ended";
               song.content = song.content.join(`\`\``);
               song.edit(song.content);
-              message.guild.me.voiceChannel.leave();
+              message.guild.me.voice.channel.leave();
               collector.stop();
             });
           })
@@ -156,9 +156,9 @@ module.exports.changeVolume = message => {
 };
 
 module.exports.leaveChannel = message => {
-  if (message.guild.me.voiceChannel && dispatcher) {
+  if (message.guild.me.voice.channel && dispatcher) {
     dispatcher.end();
-    message.guild.me.voiceChannel.leave();
+    message.guild.me.voice.channel.leave();
   }
   message.delete();
 };
@@ -175,7 +175,7 @@ module.exports.mute = message => {
 };
 
 module.exports.stopSong = message => {
-  if (message.guild.me.voiceChannel) {
+  if (message.guild.me.voice.channel) {
     if (song && dispatcher) {
       dispatcher.setVolume(0);
       song.content = song.content.split(`\`\``);
@@ -189,7 +189,6 @@ module.exports.stopSong = message => {
 };
 
 module.exports.streamSong = async message => {
-  console.log(message.member);
   if (message.member.voice.channel) {
     let url = message.content.substr(8);
     const ytdl = require("ytdl-core");
@@ -201,12 +200,14 @@ module.exports.streamSong = async message => {
     // If not a url, then search for the song on YouTube using youtubeApi.js
     const yt = require("./youtubeApi");
     let urlArr = await yt.search(url);
-    urlArr = [urlArr[0], urlArr[1], urlArr[2], urlArr[3], urlArr[4]];
-    const embed = new Discord.RichEmbed()
+    const embed = new Discord.MessageEmbed()
       .setColor(0xff00aa)
       .setTitle("Search Results Found: ");
     for (let i = 0; i < urlArr.length; i++) {
-      embed.addField(i + 1, `https://youtube.com${urlArr[i]}`);
+      embed.addField(
+        `${i + 1}: ${urlArr[i].title}`,
+        `https://youtube.com${urlArr[i].href}`
+      );
     }
     message;
     message.channel.send({ embed }).then(async msg => {
@@ -229,7 +230,7 @@ module.exports.streamSong = async message => {
           if (!collected.first()) return;
           const reaction = collected.first();
           url = urlArr[reactions.indexOf(reaction.emoji.name)];
-          playStream(url, message);
+          playStream(url.href, message);
         });
     });
   } else message.reply(`You must join a voice channel first!!`);
