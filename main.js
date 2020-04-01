@@ -11,13 +11,17 @@ const weather = require("./Weather/weather.js");
 const words = require("./Words/words.js");
 
 client.on("ready", () => {
-  client.user.setPresence({ status: "online", game: { name: "/help" } });
+  client.user.setPresence({
+    status: "online",
+    activity: { name: "message /help" }
+  });
   console.log(
     `Logged in as ${client.user.tag}!\nVersion Running: ${Discord.version}`
   );
 });
 
 client.on("message", message => {
+  console.log(message);
   if (!message.guild) return;
   if (!message.content.startsWith("/")) return;
   else if (message.content.startsWith("/help")) help.index(message);

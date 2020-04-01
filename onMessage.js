@@ -30,7 +30,7 @@ module.exports.playSong = message => {
           .catch(console.log);
       } else message.channel.send("You must Join a Voice Channel First!");
     } else if (matching.length > 1) {
-      const embed = new Discord.RichEmbed()
+      const embed = new Discord.MessageEmbed()
         .setTitle("Songs Found:")
         .setColor(0xff00aa)
         .setDescription(

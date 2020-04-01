@@ -27,7 +27,7 @@ module.exports.getLyrics = async message => {
     );
     return;
   }
-  const embed = new Discord.RichEmbed()
+  const embed = new Discord.MessageEmbed()
     .setTitle("Lyrics Found:")
     .setColor(0xff00aa)
     .setDescription(

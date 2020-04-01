@@ -30,7 +30,7 @@ Status: \`\` Playing \`\``
           (reaction, user) =>
             reactions.includes(reaction.emoji.name) &&
             user.id != song.author.id,
-          { time: 1000000 } // Long time
+          { time: 10000 }
         );
         collector.on("collect", async (reaction, reactionCollector) => {
           const index = reactions.indexOf(reaction.emoji.name);
@@ -99,7 +99,7 @@ Status: \`\` Playing \`\``
           .catch(console.log);
       } else message.channel.send("You must Join a Voice Channel First!");
     } else if (matching.length > 1) {
-      const embed = new Discord.RichEmbed()
+      const embed = new Discord.MessageEmbed()
         .setTitle("Songs Found:")
         .setColor(0xff00aa)
         .setDescription(
@@ -145,6 +145,10 @@ module.exports.resumeSong = async message => {
 
 module.exports.changeVolume = message => {
   const content = parseInt(message.content.substr(8));
+  if (Number.isNaN(content) || content > 100 || content < 0) {
+    message.reply(`Volume must be between 0 and 100`);
+    return;
+  }
   dispatcher.setVolume(content / 100);
   if (song.content) {
     song.content = song.content.split(`\`\``);
@@ -241,7 +245,7 @@ playStream = async (url, message) => {
   const songDetails = await ytdl.getBasicInfo(url);
   song = await message.channel.send(
     `Playing :musical_note: ${songDetails.title} :musical_note: 
-Volume: \`\` 100% \`\`
+Volume: \`\` 20% \`\`
 Status: \`\` Playing \`\``
   );
   const reactions = [`⏯`, `🔈`, `🔊`];
@@ -256,6 +260,7 @@ Status: \`\` Playing \`\``
       dispatcher = connection.play(
         ytdl(url, { filter: "audioonly", quality: "highestaudio" })
       );
+      dispatcher.setVolume(0.2);
       dispatcher.on("finish", end => {
         console.log("ENDED");
         song.content = song.content.split(`\`\``);

@@ -21,7 +21,7 @@ module.exports.getWeather = async message => {
     else message.reply(`Error 404. Please try again with a different city`);
     return;
   }
-  const embed = new Discord.RichEmbed()
+  const embed = new Discord.MessageEmbed()
     .setColor(0xff00aa)
     .setTitle(`Temperature report in ${res.name}, ${res.sys.country}`)
     .setURL(`https://openweathermap.org/city/${res.id}`)

@@ -29,7 +29,7 @@ module.exports.word = async message => {
       return;
     }
   }
-  const embed = new Discord.RichEmbed()
+  const embed = new Discord.MessageEmbed()
     .setTitle(`Data is fetched from WordsAPI:`)
     .setColor(0xff00aa)
     .setDescription(

@@ -2,7 +2,7 @@ const Discord = require("discord.js");
 
 module.exports.index = message => {
   if (message.content === "/help") {
-    const embed = new Discord.RichEmbed()
+    const embed = new Discord.MessageEmbed()
       .setTitle("Help Options:")
       .setColor(0xff00aa)
       .setDescription(
