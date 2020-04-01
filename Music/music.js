@@ -4,7 +4,10 @@ var dispatcher; // Voice Dispatcher of the song currently playing
 var collector; // Reaction collector to the song playing
 var song; // Current Playing song message
 
+var dispatchers = {};
+
 module.exports.playSong = message => {
+  const guildId = message.channel.guild.id;
   const rootMusicDir = "D:Music";
   fs.readdir(rootMusicDir, async (err, tempFiles) => {
     if (err) console.error(err);
@@ -39,35 +42,41 @@ Status: \`\` Playing \`\``
             //   dispatcher.pause();
             // else dispatcher.play();
             song.content = song.content.split(`\`\``);
-            if (dispatcher.paused) {
-              await dispatcher.resume();
+            if (dispatchers[guildId].paused) {
+              await dispatchers[guildId].resume();
               song.content[3] = "Playing";
             } else {
-              await dispatcher.pause();
+              await dispatchers[guildId].pause();
               song.content[3] = "Paused";
             }
             song.content = song.content.join(`\`\``);
             song.edit(song.content);
           } else if (index === 1) {
             // Decrease Volume
-            if (dispatcher.volume && dispatcher.volume > 0.1) {
-              await dispatcher.setVolume(
-                Math.round((dispatcher.volume - 0.1) * 10) / 10
+            if (
+              dispatchers[guildId].volume &&
+              dispatchers[guildId].volume > 0.1
+            ) {
+              await dispatchers[guildId].setVolume(
+                Math.round((dispatchers[guildId].volume - 0.1) * 10) / 10
               );
-            } else await dispatcher.setVolume(0);
+            } else await dispatchers[guildId].setVolume(0);
             song.content = song.content.split(`\`\``);
-            song.content[1] = `${dispatcher.volume * 100}%`;
+            song.content[1] = `${dispatchers[guildId].volume * 100}%`;
             song.content = song.content.join(`\`\``);
             song.edit(song.content);
           } else if (index === 2) {
             // Increase Volume
-            if (dispatcher.volume && dispatcher.volume < 0.9) {
-              await dispatcher.setVolume(
-                Math.round((dispatcher.volume + 0.1) * 10) / 10
+            if (
+              dispatchers[guildId].dispatchers[guildId] &&
+              dispatcher.volume < 0.9
+            ) {
+              await dispatchers[guildId].setVolume(
+                Math.round((dispatchers[guildId].volume + 0.1) * 10) / 10
               );
-            } else await dispatcher.setVolume(1);
+            } else await dispatchers[guildId].setVolume(1);
             song.content = song.content.split(`\`\``);
-            song.content[1] = `${dispatcher.volume * 100}%`;
+            song.content[1] = `${dispatchers[guildId].volume * 100}%`;
             song.content = song.content.join(`\`\``);
             song.edit(song.content);
           }
@@ -84,10 +93,10 @@ Status: \`\` Playing \`\``
         message.member.voice.channel
           .join()
           .then(async connection => {
-            dispatcher = await connection.playFile(
+            dispatchers[guildId] = await connection.playFile(
               `${rootMusicDir}${matching[0]}`
             );
-            dispatcher.on("finish", end => {
+            dispatchers[guildId].on("finish", end => {
               song.content = song.content.split(`\`\``);
               song.content[3] = "Ended";
               song.content = song.content.join(`\`\``);
@@ -118,10 +127,11 @@ Status: \`\` Playing \`\``
 };
 
 module.exports.pauseSong = async message => {
+  const guildId = message.channel.guild.id;
   if (song) {
     song.content = song.content.split(`\`\``);
-    if (!dispatcher.paused) {
-      await dispatcher.pause();
+    if (!dispatchers[guildId].paused) {
+      await dispatchers[guildId].pause();
       song.content[3] = "Paused";
     }
     song.content = song.content.join(`\`\``);
@@ -131,10 +141,11 @@ module.exports.pauseSong = async message => {
 };
 
 module.exports.resumeSong = async message => {
+  const guildId = message.channel.guild.id;
   if (song) {
     song.content = song.content.split(`\`\``);
-    if (dispatcher.paused) {
-      await dispatcher.resume();
+    if (dispatchers[guildId].paused) {
+      await dispatchers[guildId].resume();
       song.content[3] = "Playing";
     }
     song.content = song.content.join(`\`\``);
@@ -144,15 +155,16 @@ module.exports.resumeSong = async message => {
 };
 
 module.exports.changeVolume = message => {
+  const guildId = message.channel.guild.id;
   const content = parseInt(message.content.substr(8));
   if (Number.isNaN(content) || content > 100 || content < 0) {
     message.reply(`Volume must be between 0 and 100`);
     return;
   }
-  dispatcher.setVolume(content / 100);
+  dispatchers[guildId].setVolume(content / 100);
   if (song.content) {
     song.content = song.content.split(`\`\``);
-    song.content[1] = `${dispatcher.volume * 100}%`;
+    song.content[1] = `${dispatchers[guildId].volume * 100}%`;
     song.content = song.content.join(`\`\``);
     song.edit(song.content);
   }
@@ -160,16 +172,18 @@ module.exports.changeVolume = message => {
 };
 
 module.exports.leaveChannel = message => {
-  if (message.guild.me.voice.channel && dispatcher) {
-    dispatcher.end();
+  const guildId = message.channel.guild.id;
+  if (message.guild.me.voice.channel && dispatchers[guildId]) {
+    dispatchers[guildId].end();
     message.guild.me.voice.channel.leave();
   }
   message.delete();
 };
 
 module.exports.mute = message => {
-  if (song && dispatcher) {
-    dispatcher.setVolume(0);
+  const guildId = message.channel.guild.id;
+  if (song && dispatchers[guildId]) {
+    dispatchers[guildId].setVolume(0);
     song.content = song.content.split(`\`\``);
     song.content[3] = "Muted";
   }
@@ -179,25 +193,26 @@ module.exports.mute = message => {
 };
 
 module.exports.stopSong = message => {
+  const guildId = message.channel.guild.id;
   if (message.guild.me.voice.channel) {
-    if (song && dispatcher) {
-      dispatcher.setVolume(0);
+    if (song && dispatchers[guildId]) {
+      dispatchers[guildId].setVolume(0);
       song.content = song.content.split(`\`\``);
       song.content[3] = "Stopped";
     }
     song.content = song.content.join(`\`\``);
     song.edit(song.content);
-    dispatcher.end();
+    dispatchers[guildId].end();
     message.delete();
   }
 };
 
 module.exports.streamSong = async message => {
+  const guildId = message.channel.guild.id;
   if (message.member.voice.channel) {
     let url = message.content.substr(8);
     const ytdl = require("ytdl-core");
     if (url.startsWith("http")) {
-      console.log("Direct URL");
       await playStream(url, message);
       return;
     }
@@ -241,6 +256,7 @@ module.exports.streamSong = async message => {
 };
 
 playStream = async (url, message) => {
+  const guildId = message.channel.guild.id;
   var ytdl = require("ytdl-core");
   const songDetails = await ytdl.getBasicInfo(url);
   song = await message.channel.send(
@@ -254,15 +270,13 @@ Status: \`\` Playing \`\``
   message.member.voice.channel
     .join()
     .then(connection => {
-      console.log(url);
       const ytdl = require("ytdl-core");
-      dispatcher = "";
-      dispatcher = connection.play(
+      dispatchers[guildId] = "";
+      dispatchers[guildId] = connection.play(
         ytdl(url, { filter: "audioonly", quality: "highestaudio" })
       );
-      dispatcher.setVolume(0.2);
-      dispatcher.on("finish", end => {
-        console.log("ENDED");
+      dispatchers[guildId].setVolume(0.2);
+      dispatchers[guildId].on("finish", end => {
         song.content = song.content.split(`\`\``);
         song.content[3] = "Ended";
         song.content = song.content.join(`\`\``);
@@ -286,35 +300,35 @@ Status: \`\` Playing \`\``
       //   dispatcher.pause();
       // else dispatcher.play();
       song.content = song.content.split(`\`\``);
-      if (dispatcher.paused) {
-        await dispatcher.resume();
+      if (dispatchers[guildId].paused) {
+        await dispatchers[guildId].resume();
         song.content[3] = "Playing";
       } else {
-        await dispatcher.pause();
+        await dispatchers[guildId].pause();
         song.content[3] = "Paused";
       }
       song.content = song.content.join(`\`\``);
       song.edit(song.content);
     } else if (index === 1) {
       // Decrease Volume
-      if (dispatcher.volume && dispatcher.volume > 0.1) {
-        await dispatcher.setVolume(
-          Math.round((dispatcher.volume - 0.1) * 10) / 10
+      if (dispatchers[guildId].volume && dispatchers[guildId].volume > 0.1) {
+        await dispatchers[guildId].setVolume(
+          Math.round((dispatchers[guildId].volume - 0.1) * 10) / 10
         );
-      } else await dispatcher.setVolume(0);
+      } else await dispatchers[guildId].setVolume(0);
       song.content = song.content.split(`\`\``);
-      song.content[1] = `${dispatcher.volume * 100}%`;
+      song.content[1] = `${dispatchers[guildId].volume * 100}%`;
       song.content = song.content.join(`\`\``);
       song.edit(song.content);
     } else if (index === 2) {
       // Increase Volume
-      if (dispatcher.volume && dispatcher.volume < 0.9) {
-        await dispatcher.setVolume(
-          Math.round((dispatcher.volume + 0.1) * 10) / 10
+      if (dispatchers[guildId].volume && dispatchers[guildId].volume < 0.9) {
+        await dispatchers[guildId].setVolume(
+          Math.round((dispatchers[guildId].volume + 0.1) * 10) / 10
         );
-      } else await dispatcher.setVolume(1);
+      } else await dispatchers[guildId].setVolume(1);
       song.content = song.content.split(`\`\``);
-      song.content[1] = `${dispatcher.volume * 100}%`;
+      song.content[1] = `${dispatchers[guildId].volume * 100}%`;
       song.content = song.content.join(`\`\``);
       song.edit(song.content);
     }

@@ -21,7 +21,6 @@ client.on("ready", () => {
 });
 
 client.on("message", message => {
-  console.log(message);
   if (!message.guild) return;
   if (!message.content.startsWith("/")) return;
   else if (message.content.startsWith("/help")) help.index(message);
