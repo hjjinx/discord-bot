@@ -195,7 +195,7 @@ module.exports.mute = message => {
 module.exports.stopSong = message => {
   const guildId = message.channel.guild.id;
   if (message.guild.me.voice.channel) {
-    if (song && dispatchers[guildId]) {
+    if (song.content && dispatchers[guildId]) {
       dispatchers[guildId].setVolume(0);
       song.content = song.content.split(`\`\``);
       song.content[3] = "Stopped";
@@ -237,7 +237,6 @@ module.exports.streamSong = async message => {
         "\u0034\u20E3",
         "\u0035\u20E3"
       ];
-      for (let i = 0; i < urlArr.length; i++) await msg.react(reactions[i]);
       msg
         .awaitReactions(
           (filter = (reaction, user) =>
@@ -251,13 +250,15 @@ module.exports.streamSong = async message => {
           url = urlArr[reactions.indexOf(reaction.emoji.name)];
           playStream(url.href, message);
         });
+
+      for (let i = 0; i < urlArr.length; i++) await msg.react(reactions[i]);
     });
   } else message.reply(`You must join a voice channel first!!`);
 };
 
 playStream = async (url, message) => {
   const guildId = message.channel.guild.id;
-  var ytdl = require("ytdl-core");
+  const ytdl = require("ytdl-core");
   const songDetails = await ytdl.getBasicInfo(url);
   song = await message.channel.send(
     `Playing :musical_note: ${songDetails.title} :musical_note: 
@@ -269,12 +270,9 @@ Status: \`\` Playing \`\``
   // Member will always be in a voice channel at this point.
   message.member.voice.channel
     .join()
-    .then(connection => {
-      const ytdl = require("ytdl-core");
+    .then(async connection => {
       dispatchers[guildId] = "";
-      dispatchers[guildId] = connection.play(
-        ytdl(url, { filter: "audioonly", quality: "highestaudio" })
-      );
+      await streamIntoConnection(guildId, connection, url);
       dispatchers[guildId].setVolume(0.2);
       dispatchers[guildId].on("finish", end => {
         song.content = song.content.split(`\`\``);
@@ -336,4 +334,12 @@ Status: \`\` Playing \`\``
   collector.on("end", collected => {
     return;
   });
+};
+
+const streamIntoConnection = async (guildId, connection, url) => {
+  const ytdl = require("ytdl-core-discord");
+  dispatchers[guildId] = connection.play(
+    await ytdl(url, { filter: "audioonly", quality: "highestaudio" }),
+    { type: "opus" }
+  );
 };
