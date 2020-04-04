@@ -272,7 +272,18 @@ Status: \`\` Playing \`\``
     .join()
     .then(async connection => {
       dispatchers[guildId] = "";
-      await streamIntoConnection(guildId, connection, url);
+      let stream = ytdl(url, {
+        filter: "audioonly",
+        quality: "highestaudio",
+        liveChunkReadahead: 10
+      });
+      dispatchers[guildId] = connection.play(stream);
+
+      stream.on("error", console.log);
+      // stream.on("data", console.log);
+      // stream.on("progress", console.log);
+      stream.on("end", () => console.log(`End of stream`));
+
       dispatchers[guildId].setVolume(0.2);
       dispatchers[guildId].on("finish", end => {
         song.content = song.content.split(`\`\``);
@@ -334,12 +345,4 @@ Status: \`\` Playing \`\``
   collector.on("end", collected => {
     return;
   });
-};
-
-const streamIntoConnection = async (guildId, connection, url) => {
-  const ytdl = require("ytdl-core-discord");
-  dispatchers[guildId] = connection.play(
-    await ytdl(url, { filter: "audioonly", quality: "highestaudio" }),
-    { type: "opus" }
-  );
 };
