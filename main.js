@@ -36,6 +36,9 @@ client.on("message", message => {
   else if (message.content.startsWith("/weather")) weather.getWeather(message);
   else if (message.content.startsWith("/game")) games.gameHandler(message);
   else if (message.content.startsWith(`/word`)) words.word(message);
+
+  // if (message.content.startsWith("/lyrics")) lyrics.getLyrics(message);
+  // else message.reply("Under maintenance! Please reach back later.");
 });
 
 client.login(token);
