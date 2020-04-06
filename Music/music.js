@@ -275,7 +275,8 @@ Status: \`\` Playing \`\``
       let stream = ytdl(url, {
         filter: "audioonly",
         quality: "highestaudio",
-        liveChunkReadahead: 10
+        liveChunkReadahead: 10,
+        highWaterMark: 1 << 20
       });
       dispatchers[guildId] = connection.play(stream);
 
