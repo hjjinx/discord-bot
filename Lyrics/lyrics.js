@@ -92,8 +92,10 @@ const sendLyrics = (message, lyrics) => {
 
   // Since Discord limits messages to 2000 characters
   while (lyricsArr[lyricsArr.length - 1].length > 1800) {
-    const lyrics1 = lyricsArr[lyricsArr.length - 1].substr(0, 1700) + "...";
-    const lyrics2 = "..." + lyricsArr[lyricsArr.length - 1].substr(1700);
+    lyrics1 = lyricsArr[lyricsArr.length - 1];
+    const position = lyrics1.indexOf("\n", 1800);
+    lyrics1 = lyrics1.substr(0, position);
+    const lyrics2 = lyricsArr[lyricsArr.length - 1].substr(position);
     lyricsArr[lyricsArr.length - 1] = lyrics1;
     lyricsArr.push(lyrics2);
   }

@@ -242,7 +242,7 @@ module.exports.streamSong = async message => {
           (filter = (reaction, user) =>
             reactions.includes(reaction.emoji.name) &&
             user.id != msg.author.id),
-          { max: 1, time: 10000 }
+          { max: 1, time: 20000 }
         )
         .then(async collected => {
           if (!collected.first()) return;
