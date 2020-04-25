@@ -4,6 +4,7 @@ var dispatcher; // Voice Dispatcher of the song currently playing
 var collector; // Reaction collector to the song playing
 var song; // Current Playing song message
 
+var queue = {};
 var dispatchers = {};
 
 module.exports.pauseSong = async (message) => {
@@ -72,11 +73,62 @@ module.exports.mute = (message) => {
   message.delete();
 };
 
+module.exports.streamAfterHours = (message) => {
+  queue[message.channel.guild.id] = [
+    {
+      url: "https://www.youtube.com/watch?v=ygTZZpVkmKg",
+      title: "The Weeknd - After Hours (Audio)",
+    },
+    {
+      url: "https://www.youtube.com/watch?v=E3QiD99jPAg",
+      title: "The Weeknd - In Your Eyes (Audio)",
+    },
+    {
+      url: "https://www.youtube.com/watch?v=RcS_8-a-sMg",
+      title: "The Weeknd - Faith (Audio)",
+    },
+    {
+      url: "https://www.youtube.com/watch?v=u6lihZAcy4s",
+      title: "The Weeknd - Save Your Tears (Audio)",
+    },
+    {
+      url: "https://www.youtube.com/watch?v=UxPEFFHA4xw",
+      title: "The Weeknd - Snowchild (Audio)",
+    },
+    {
+      url: "https://www.youtube.com/watch?v=fHI8X4OXluQ",
+      title: "The Weeknd - Blinding Lights (Official Audio)",
+    },
+    {
+      url: "https://www.youtube.com/watch?v=-uj9b9JCIJM",
+      title: "The Weeknd - Heartless (Official Audio)",
+    },
+  ];
+  playStream("next", message);
+};
+
+module.exports.skip = (message) => {
+  const guildId = message.channel.guild.id;
+  if (queue[guildId] && queue[guildId][0]) {
+    queue[guildId].shift();
+    if (message.guild.me.voice.channel) {
+      if (song.content && dispatchers[guildId]) {
+        song.content = song.content.split(`\`\``);
+        song.content[3] = "Skipped";
+      }
+      song.content = song.content.join(`\`\``);
+      song.edit(song.content);
+      message.delete();
+    }
+    playStream("next", message);
+  }
+};
+
 module.exports.stopSong = (message) => {
   const guildId = message.channel.guild.id;
+  delete queue[guildId];
   if (message.guild.me.voice.channel) {
     if (song.content && dispatchers[guildId]) {
-      dispatchers[guildId].setVolume(0);
       song.content = song.content.split(`\`\``);
       song.content[3] = "Stopped";
     }
@@ -84,6 +136,25 @@ module.exports.stopSong = (message) => {
     song.edit(song.content);
     dispatchers[guildId].end();
     message.delete();
+  }
+};
+
+module.exports.displayQueue = (message) => {
+  const guildId = message.channel.guild.id;
+  if (queue[guildId]) {
+    if (!queue[guildId][0]) message.channel.send("The queue is empty!");
+    else {
+      const embed = new Discord.MessageEmbed()
+        .setColor(0xfd0016)
+        .setTitle("Items in queue: ");
+      for (let i = 0; i < queue[guildId].length; i++) {
+        embed.addField(
+          `${i + 1}: ${queue[guildId][i].title}`,
+          queue[guildId][i].url
+        );
+      }
+      message.channel.send({ embed });
+    }
   }
 };
 
@@ -140,6 +211,19 @@ module.exports.streamSong = async (message) => {
 playStream = async (url, message) => {
   const guildId = message.channel.guild.id;
   const ytdl = require("ytdl-core");
+
+  if (queue[guildId] && queue[guildId][0] && url !== "next") {
+    const songDetails = await ytdl.getBasicInfo(url);
+    queue[guildId][1] = { url, title: songDetails.title };
+    message.reply(`Added \`\`${songDetails.title}\`\` to queue`);
+    return;
+  } else if (!queue[guildId]) {
+    const songDetails = await ytdl.getBasicInfo(url);
+    queue[guildId] = [{ url, title: songDetails.title }];
+  }
+
+  if (url === "next") url = queue[guildId][0].url;
+
   const songDetails = await ytdl.getBasicInfo(url);
   song = await message.channel.send(
     `Playing :musical_note: ${songDetails.title} :musical_note: 
@@ -172,8 +256,14 @@ Status: \`\` Playing \`\``
         song.content[3] = "Ended";
         song.content = song.content.join(`\`\``);
         song.edit(song.content);
-        message.guild.me.voice.channel.leave();
         collector.stop();
+
+        if (queue[guildId]) queue[guildId].shift();
+        if (queue[guildId] && queue[guildId][0]) {
+          playStream("next", message);
+          return;
+        }
+        message.guild.me.voice.channel.leave();
       });
     })
     .catch(console.error);
@@ -182,7 +272,7 @@ Status: \`\` Playing \`\``
     // Filter for collecting reactions. Only reactions passing through filter collected
     (reaction, user) =>
       reactions.includes(reaction.emoji.name) && user.id != song.author.id,
-    { time: 1000000 } // Long time
+    { time: 100000000 } // Long time
   );
   collector.on("collect", async (reaction, reactionCollector) => {
     const index = reactions.indexOf(reaction.emoji.name);
