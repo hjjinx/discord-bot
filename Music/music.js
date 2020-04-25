@@ -107,7 +107,7 @@ module.exports.streamAfterHours = (message) => {
   playStream("next", message);
 };
 
-module.exports.skip = (message) => {
+const skip = async (message) => {
   const guildId = message.channel.guild.id;
   if (queue[guildId] && queue[guildId][0]) {
     queue[guildId].shift();
@@ -117,12 +117,13 @@ module.exports.skip = (message) => {
         song.content[3] = "Skipped";
       }
       song.content = song.content.join(`\`\``);
-      song.edit(song.content);
-      message.delete();
+      await song.edit(song.content);
     }
     playStream("next", message);
   }
 };
+
+module.exports.skip = skip;
 
 module.exports.stopSong = (message) => {
   const guildId = message.channel.guild.id;
@@ -230,7 +231,7 @@ playStream = async (url, message) => {
 Volume: \`\` 20% \`\`
 Status: \`\` Playing \`\``
   );
-  const reactions = [`⏯`, `🔈`, `🔊`];
+  const reactions = [`⏯`, `🔈`, `🔊`, "⏩"];
   for (reaction of reactions) await song.react(reaction);
   // Member will always be in a voice channel at this point.
   message.member.voice.channel
@@ -312,6 +313,8 @@ Status: \`\` Playing \`\``
       song.content[1] = `${dispatchers[guildId].volume * 100}%`;
       song.content = song.content.join(`\`\``);
       song.edit(song.content);
+    } else if (index === 3) {
+      skip(message);
     }
   });
   collector.on("end", (collected) => {
