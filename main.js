@@ -28,6 +28,8 @@ client.on("message", (message) => {
   else if (message.content.startsWith("/queue")) music.displayQueue(message);
   else if (message.content.startsWith("/streamahp"))
     music.streamAfterHours(message);
+  else if (message.content.startsWith("/streamsb"))
+    music.streamStarboy(message);
   else if (message.content.startsWith("/skip")) music.skip(message);
   else if (message.content.startsWith("/stream")) music.streamSong(message);
   else if (message.content.startsWith("/pause")) music.pauseSong(message);

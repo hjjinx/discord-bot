@@ -107,6 +107,63 @@ module.exports.streamAfterHours = (message) => {
   playStream("next", message);
 };
 
+module.exports.streamStarboy = (message) => {
+  queue[message.channel.guild.id] = [
+    { url: "https://www.youtube.com/watch?v=3_g2un5M350", title: "Starboy" },
+    {
+      url: "https://www.youtube.com/watch?v=17c7kDMG_mU",
+      title: "Party Monster",
+    },
+    {
+      url: "https://www.youtube.com/watch?v=jBhbgZYz7pI",
+      title: "False Alarm",
+    },
+    { url: "https://www.youtube.com/watch?v=a40tAP5MC6M", title: "Reminder" },
+    { url: "https://www.youtube.com/watch?v=BCvmAySCnLk", title: "Rockin'" },
+    { url: "https://www.youtube.com/watch?v=2QcSvOSXTBc", title: "Secrets" },
+    {
+      url: "https://www.youtube.com/watch?v=042WtX-131s",
+      title: "True colors",
+    },
+    {
+      url: "https://www.youtube.com/watch?v=Ir1tMjvMAWI",
+      title: "Stargirl interlude",
+    },
+    { url: "https://www.youtube.com/watch?v=DWi73D1vZTc", title: "Sidewalks" },
+    {
+      url: "https://www.youtube.com/watch?v=Jt5nPuMgKA8",
+      title: "Six Feet Under",
+    },
+    {
+      url: "https://www.youtube.com/watch?v=a1PkVEHV-w8",
+      title: "Love To Lay",
+    },
+    {
+      url: "https://www.youtube.com/watch?v=atGlHRi0n4A",
+      title: "A Lonely Night",
+    },
+    { url: "https://www.youtube.com/watch?v=RPCqZssID78", title: "Attention" },
+    {
+      url: "https://www.youtube.com/watch?v=tX2ncrjdZ3o",
+      title: "Ordinary Life",
+    },
+    {
+      url: "https://www.youtube.com/watch?v=LzEQYzKsxv0",
+      title: "Nothing Without You",
+    },
+    { url: "https://www.youtube.com/watch?v=sfvFAqzIGh8", title: "All I Know" },
+    {
+      url: "https://www.youtube.com/watch?v=QLCpqdqeoII",
+      title: "Die For You",
+    },
+    {
+      url: "https://www.youtube.com/watch?v=qPRNIHxLhmc",
+      title: "I Feel It Coming",
+    },
+  ];
+  playStream("next", message);
+};
+
 const skip = async (message) => {
   const guildId = message.channel.guild.id;
   if (queue[guildId] && queue[guildId][0]) {
