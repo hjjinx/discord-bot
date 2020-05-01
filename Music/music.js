@@ -6,6 +6,7 @@ var song; // Current Playing song message
 
 var queue = {};
 var dispatchers = {};
+var skipMessageDeleteTimeout = {};
 
 module.exports.pauseSong = async (message) => {
   const guildId = message.channel.guild.id;
@@ -303,7 +304,7 @@ Status: \`\` Playing \`\``
       let stream = ytdl(url, {
         filter: "audioonly",
         quality: "highestaudio",
-        liveChunkReadahead: 10,
+        liveChunkReadahead: 20,
         highWaterMark: 1 << 20,
       });
       dispatchers[guildId] = connection.play(stream);
@@ -353,7 +354,18 @@ Status: \`\` Playing \`\``
       song.content = song.content.join(`\`\``);
       song.edit(song.content);
     } else if (index === 2) {
-      skip(message);
+      if (queue[guildId].length === 1) {
+        if (!skipMessageDeleteTimeout[guildId]) {
+          message.channel
+            .send("This are no more songs in the queue!")
+            .then((skipped) => {
+              skipMessageDeleteTimeout[guildId] = setTimeout(() => {
+                skipped.delete();
+                delete skipMessageDeleteTimeout[guildId];
+              }, 10000);
+            });
+        }
+      } else skip(message);
     } else if (index === 3) {
       queue[guildId].splice(1, 0, queue[guildId][0]);
       skip(message);
