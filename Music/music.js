@@ -74,6 +74,10 @@ module.exports.mute = (message) => {
 };
 
 module.exports.streamAfterHours = (message) => {
+  // if (!message.member.voice.channel) {
+  //   message.reply()
+  //   return;
+  // }
   queue[message.channel.guild.id] = [
     {
       url: "https://www.youtube.com/watch?v=ygTZZpVkmKg",
@@ -182,7 +186,7 @@ const skip = async (message) => {
 
 module.exports.skip = skip;
 
-module.exports.stopSong = (message) => {
+const stop = (message) => {
   const guildId = message.channel.guild.id;
   delete queue[guildId];
   if (message.guild.me.voice.channel) {
@@ -196,6 +200,7 @@ module.exports.stopSong = (message) => {
     message.delete();
   }
 };
+module.exports.stopSong = stop;
 
 module.exports.displayQueue = (message) => {
   const guildId = message.channel.guild.id;
@@ -288,7 +293,7 @@ playStream = async (url, message) => {
 Volume: \`\` 20% \`\`
 Status: \`\` Playing \`\``
   );
-  const reactions = [`⏯`, `🔈`, `🔊`, "⏩"];
+  const reactions = [`⏹️`, `⏯`, "⏭", `🔄`, `🔈`, `🔊`];
   for (reaction of reactions) await song.react(reaction);
   // Member will always be in a voice channel at this point.
   message.member.voice.channel
@@ -335,9 +340,8 @@ Status: \`\` Playing \`\``
   collector.on("collect", async (reaction, reactionCollector) => {
     const index = reactions.indexOf(reaction.emoji.name);
     if (index === 0) {
-      // if (song.reactions.get(reactions[0]).count % 2 === 0)
-      //   dispatcher.pause();
-      // else dispatcher.play();
+      stop(message);
+    } else if (index === 1) {
       song.content = song.content.split(`\`\``);
       if (dispatchers[guildId].paused) {
         await dispatchers[guildId].resume();
@@ -348,7 +352,12 @@ Status: \`\` Playing \`\``
       }
       song.content = song.content.join(`\`\``);
       song.edit(song.content);
-    } else if (index === 1) {
+    } else if (index === 2) {
+      skip(message);
+    } else if (index === 3) {
+      queue[guildId].splice(1, 0, queue[guildId][0]);
+      skip(message);
+    } else if (index === 4) {
       // Decrease Volume
       if (dispatchers[guildId].volume && dispatchers[guildId].volume > 0.1) {
         await dispatchers[guildId].setVolume(
@@ -359,19 +368,17 @@ Status: \`\` Playing \`\``
       song.content[1] = `${dispatchers[guildId].volume * 100}%`;
       song.content = song.content.join(`\`\``);
       song.edit(song.content);
-    } else if (index === 2) {
+    } else if (index === 5) {
       // Increase Volume
-      if (dispatchers[guildId].volume && dispatchers[guildId].volume < 0.9) {
+      if (dispatchers[guildId].volume && dispatchers[guildId].volume < 0.8) {
         await dispatchers[guildId].setVolume(
-          Math.round((dispatchers[guildId].volume + 0.1) * 10) / 10
+          Math.round((dispatchers[guildId].volume + 0.2) * 10) / 10
         );
       } else await dispatchers[guildId].setVolume(1);
       song.content = song.content.split(`\`\``);
       song.content[1] = `${dispatchers[guildId].volume * 100}%`;
       song.content = song.content.join(`\`\``);
       song.edit(song.content);
-    } else if (index === 3) {
-      skip(message);
     }
   });
   collector.on("end", (collected) => {
