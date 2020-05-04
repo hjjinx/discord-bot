@@ -307,7 +307,7 @@ Status: \`\` Playing \`\``
         liveChunkReadahead: 20,
         highWaterMark: 1 << 20,
       });
-      dispatchers[guildId] = connection.play(stream);
+      dispatchers[guildId] = connection.play(stream, { highWaterMark: 32 });
 
       stream.on("error", console.log);
       // stream.on("data", console.log);
@@ -395,126 +395,5 @@ Status: \`\` Playing \`\``
   });
   collector.on("end", (collected) => {
     return;
-  });
-};
-
-// Streams a song directly from the server.
-module.exports.playSong = (message) => {
-  const guildId = message.channel.guild.id;
-  const rootMusicDir = "D:Music";
-  fs.readdir(rootMusicDir, async (err, tempFiles) => {
-    if (err) console.error(err);
-    const filesLower = [];
-    tempFiles.map((file, i) => filesLower.push(file.toLowerCase()));
-
-    const matching = [];
-    message.content = message.content.substr(7).toLowerCase();
-    for (file of filesLower)
-      if (file.includes(message.content)) matching.push(file);
-
-    if (matching.length === 1) {
-      if (message.member.voice.channel) {
-        song = await message.channel.send(
-          `Playing :musical_note: ${matching[0]} :musical_note: 
-Volume: \`\` 100% \`\`
-Status: \`\` Playing \`\``
-        );
-        const reactions = [`⏯`, `🔈`, `🔊`];
-        for (reaction of reactions) await song.react(reaction);
-        collector = song.createReactionCollector(
-          // Filter for collecting reactions. Only reactions passing through filter collected
-          (reaction, user) =>
-            reactions.includes(reaction.emoji.name) &&
-            user.id != song.author.id,
-          { time: 10000 }
-        );
-        collector.on("collect", async (reaction, reactionCollector) => {
-          const index = reactions.indexOf(reaction.emoji.name);
-          if (index === 0) {
-            // if (song.reactions.get(reactions[0]).count % 2 === 0)
-            //   dispatcher.pause();
-            // else dispatcher.play();
-            song.content = song.content.split(`\`\``);
-            if (dispatchers[guildId].paused) {
-              await dispatchers[guildId].resume();
-              song.content[3] = "Playing";
-            } else {
-              await dispatchers[guildId].pause();
-              song.content[3] = "Paused";
-            }
-            song.content = song.content.join(`\`\``);
-            song.edit(song.content);
-          } else if (index === 1) {
-            // Decrease Volume
-            if (
-              dispatchers[guildId].volume &&
-              dispatchers[guildId].volume > 0.1
-            ) {
-              await dispatchers[guildId].setVolume(
-                Math.round((dispatchers[guildId].volume - 0.1) * 10) / 10
-              );
-            } else await dispatchers[guildId].setVolume(0);
-            song.content = song.content.split(`\`\``);
-            song.content[1] = `${dispatchers[guildId].volume * 100}%`;
-            song.content = song.content.join(`\`\``);
-            song.edit(song.content);
-          } else if (index === 2) {
-            // Increase Volume
-            if (
-              dispatchers[guildId].dispatchers[guildId] &&
-              dispatcher.volume < 0.9
-            ) {
-              await dispatchers[guildId].setVolume(
-                Math.round((dispatchers[guildId].volume + 0.1) * 10) / 10
-              );
-            } else await dispatchers[guildId].setVolume(1);
-            song.content = song.content.split(`\`\``);
-            song.content[1] = `${dispatchers[guildId].volume * 100}%`;
-            song.content = song.content.join(`\`\``);
-            song.edit(song.content);
-          }
-        });
-        collector.on("end", (collected) => {
-          return;
-        });
-        // song.awaitReactions(
-        //   (filter = (reaction, user) =>
-        //     reactions.includes(reaction.emoji.name) &&
-        //     user.id != song.author.id),
-        //   { time: 600000 } // Time = 10 Minutes
-        // ).then(async collected)
-        message.member.voice.channel
-          .join()
-          .then(async (connection) => {
-            dispatchers[guildId] = await connection.playFile(
-              `${rootMusicDir}${matching[0]}`
-            );
-            dispatchers[guildId].on("finish", (end) => {
-              song.content = song.content.split(`\`\``);
-              song.content[3] = "Ended";
-              song.content = song.content.join(`\`\``);
-              song.edit(song.content);
-              message.guild.me.voice.channel.leave();
-              collector.stop();
-            });
-          })
-          .catch(console.log);
-      } else message.channel.send("You must Join a Voice Channel First!");
-    } else if (matching.length > 1) {
-      const embed = new Discord.MessageEmbed()
-        .setTitle("Songs Found:")
-        .setColor(0xff00aa)
-        .setDescription(
-          "The list of Songs available on the server that match your query are:"
-        );
-      for (match of matching)
-        embed.addField(match, "-----------------------------------");
-
-      message.channel.send({ embed });
-    } else {
-      message.channel.send(
-        `The server has no tracks that match your search query. Please try some other song.`
-      );
-    }
   });
 };
