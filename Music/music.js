@@ -1,16 +1,21 @@
-const fs = require("fs");
 const Discord = require("discord.js");
 var dispatcher; // Voice Dispatcher of the song currently playing
 var collector; // Reaction collector to the song playing
-var song; // Current Playing song message
 
 var queue = {};
-var dispatchers = {};
 var skipMessageDeleteTimeout = {};
-var guildStorage = {};
+var guildStorage = {
+  // Structure of this storage:
+  // guildId: {
+  //   dispatcher: 1,
+  //   volume: 1,
+  //   message: "asd",
+  // },
+};
 
 module.exports.pauseSong = async (message) => {
   const guildId = message.channel.guild.id;
+  song = guildStorage[guildId].message;
   if (song) {
     song.content = song.content.split(`\`\``);
     if (!guildStorage[guildId].dispatcher.paused) {
@@ -25,6 +30,7 @@ module.exports.pauseSong = async (message) => {
 
 module.exports.resumeSong = async (message) => {
   const guildId = message.channel.guild.id;
+  song = guildStorage[guildId].message;
   if (song) {
     song.content = song.content.split(`\`\``);
     if (guildStorage[guildId].dispatcher.paused) {
@@ -44,6 +50,7 @@ module.exports.changeVolume = (message) => {
     message.reply(`Volume must be between 0 and 100`);
     return;
   }
+  song = guildStorage[guildId].message;
   guildStorage[guildId].dispatcher.setVolume(content / 100);
   guildStorage[guildId].volume = parseFloat(content);
   if (song.content) {
@@ -60,12 +67,13 @@ module.exports.leaveChannel = (message) => {
   if (message.guild.me.voice.channel && guildStorage[guildId].dispatcher) {
     guildStorage[guildId].dispatcher.end();
     message.guild.me.voice.channel.leave();
+    stop();
   }
-  message.delete();
 };
 
 module.exports.mute = (message) => {
   const guildId = message.channel.guild.id;
+  song = guildStorage[guildId].message;
   if (song && guildStorage[guildId].dispatcher) {
     guildStorage[guildId].dispatcher.setVolume(0);
     song.content = song.content.split(`\`\``);
@@ -173,6 +181,7 @@ module.exports.streamStarboy = (message) => {
 
 const skip = async (message) => {
   const guildId = message.channel.guild.id;
+  song = guildStorage[guildId].message;
   if (queue[guildId] && queue[guildId][0]) {
     queue[guildId].shift();
     if (message.guild.me.voice.channel) {
@@ -182,6 +191,7 @@ const skip = async (message) => {
       }
       song.content = song.content.join(`\`\``);
       await song.edit(song.content);
+      guildStorage[guildId].collector.stop();
     }
     playStream("next", message);
   }
@@ -191,9 +201,15 @@ module.exports.skip = skip;
 
 const stop = (message) => {
   const guildId = message.channel.guild.id;
+  song = guildStorage[guildId].message;
   delete queue[guildId];
   if (message.guild.me.voice.channel) {
     guildStorage[guildId].dispatcher.end();
+    song.content = song.content.split(`\`\``);
+    song.content[3] = "Stopped";
+    song.content = song.content.join(`\`\``);
+    song.edit(song.content);
+    guildStorage[guildId].collector.stop();
     message.delete();
   }
 };
@@ -275,7 +291,7 @@ playStream = async (url, message) => {
   if (queue[guildId]) {
     if (queue[guildId][0] && url !== "next") {
       const songDetails = await ytdl.getBasicInfo(url);
-      queue[guildId][1] = { url, title: songDetails.title };
+      queue[guildId].push({ url, title: songDetails.title });
       message.reply(`Added \`\`${songDetails.title}\`\` to queue`);
       return;
     } else if (queue[guildId][0] && url === "next") {
@@ -299,16 +315,15 @@ Volume: \`\` ${
     }% \`\`
 Status: \`\` Playing \`\``
   );
+  if (!guildStorage[guildId])
+    guildStorage[guildId] = { volume: 0.2, message: song };
+  else guildStorage[guildId].message = song;
   const reactions = [`⏹️`, `⏯`, "⏭", `🔄`, `🔈`, `🔊`];
   // Member will always be in a voice channel at this point.
   message.member.voice.channel
     .join()
     .then(async (connection) => {
-      console.log("\n\n before:");
-      console.log(guildStorage);
       if (!guildStorage[guildId]) guildStorage[guildId] = { volume: 0.2 };
-      console.log("\n\n After:");
-      console.log(guildStorage);
 
       console.log("\n\n");
       console.log("url in join voice channel: ");
@@ -331,11 +346,13 @@ Status: \`\` Playing \`\``
       stream.on("end", () => console.log(`End of stream`));
 
       guildStorage[guildId].dispatcher.on("finish", (end) => {
+        song = guildStorage[guildId].message;
+
         song.content = song.content.split(`\`\``);
         song.content[3] = "Ended";
         song.content = song.content.join(`\`\``);
         song.edit(song.content);
-        collector.stop();
+        guildStorage[guildId].collector.stop();
 
         if (queue[guildId]) queue[guildId].shift();
         if (queue[guildId] && queue[guildId][0]) {
@@ -359,8 +376,10 @@ Status: \`\` Playing \`\``
       reactions.includes(reaction.emoji.name) && user.id != song.author.id,
     { time: 100000000 } // Long time
   );
+  guildStorage[guildId].collector = collector;
   collector.on("collect", async (reaction, reactionCollector) => {
     const index = reactions.indexOf(reaction.emoji.name);
+    song = guildStorage[guildId].message;
     if (index === 0) {
       stop(message);
     } else if (index === 1) {
