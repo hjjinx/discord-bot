@@ -13,8 +13,8 @@ module.exports.index = (message) => {
         `Get lyrics of any song. Type \`\`/lyrics songname\`\` for lyrics`
       )
       .addField(
-        "/stream",
-        `Stream a song directly from YouTube. Type \`\`/stream songname\`\` to play a song.`
+        "/p",
+        `Stream a song directly from YouTube. Type \`\`/p songname\`\` to play a song.`
       )
       .addField(
         "/weather",
@@ -33,8 +33,8 @@ Lyrics are directly fetched from the Google search results`);
       `I can send you the weather details of any place in the whole world. The data is fetched from the OpenWeatherMap API.
 To fetch the weather of Chandigarh, type \`\`/weather chandigarh\`\``
     );
-  else if (message.content === "/help stream")
+  else if (message.content === "/help p")
     message.channel.send(
-      `I can stream any video from YouTube directly & I just need the URL for the video 😄, type \`\`/stream *URL*\`\``
+      `I can stream any video from YouTube directly & I just need the URL for the video 😄, type \`\`/p *URL*\`\``
     );
 };
