@@ -1,0 +1,22 @@
+err in discord dispatcher: Error: input stream: read ECONNRESET
+Error: read ECONNRESET
+    at TLSWrap.onStreamRead (internal/stream_base_commons.js:205:27) {
+  errno: 'ECONNRESET',
+  code: 'ECONNRESET',
+  syscall: 'read'
+}
+
+
+
+internal/validators.js:117
+    throw new ERR_INVALID_ARG_TYPE(name, 'string', value);
+    ^
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "url" argument must be of type string. Received undefined
+    at validateString (internal/validators.js:117:11)
+    at Url.parse (url.js:159:3)
+    at Object.urlParse [as parse] (url.js:154:13)
+    at doDownload (C:\Users\Himanshu\Desktop\Coding\Discord\BoomBoom\node_modules\miniget\dist\index.js:90:28)
+    at processTicksAndRejections (internal/process/task_queues.js:79:11) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}

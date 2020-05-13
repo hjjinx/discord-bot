@@ -45,6 +45,7 @@ module.exports.changeVolume = (message) => {
     return;
   }
   guildStorage[guildId].dispatcher.setVolume(content / 100);
+  guildStorage[guildId].volume = parseFloat(content);
   if (song.content) {
     song.content = song.content.split(`\`\``);
     song.content[1] = `${guildStorage[guildId].dispatcher.volume * 100}%`;
@@ -192,12 +193,6 @@ const stop = (message) => {
   const guildId = message.channel.guild.id;
   delete queue[guildId];
   if (message.guild.me.voice.channel) {
-    // if (song.content && guildStorage[guildId].dispatcher) {
-    //   song.content = song.content.split(`\`\``);
-    //   song.content[3] = "Stopped";
-    // }
-    // song.content = song.content.join(`\`\``);
-    // song.edit(song.content);
     guildStorage[guildId].dispatcher.end();
     message.delete();
   }
@@ -244,6 +239,9 @@ module.exports.streamSong = async (message) => {
   for (let i = 0; i < urlArr.length; i++) {
     embed.addField(`${i + 1}: ${urlArr[i].title}`, urlArr[i].href);
   }
+  console.log("\n\n\n\n");
+  console.log(urlArr);
+  console.log("\n\n\n\n");
   message.channel.send({ embed }).then(async (msg) => {
     const reactions = [
       "\u0031\u20E3",
@@ -262,6 +260,8 @@ module.exports.streamSong = async (message) => {
         if (!collected.first()) return;
         const reaction = collected.first();
         url = urlArr[reactions.indexOf(reaction.emoji.name)];
+        console.log("url in collected reactions upon searching:");
+        console.log(url);
         playStream(url.href, message);
       });
 
@@ -272,7 +272,6 @@ module.exports.streamSong = async (message) => {
 playStream = async (url, message) => {
   const guildId = message.channel.guild.id;
   const ytdl = require("ytdl-core");
-  console.log(queue);
   if (queue[guildId]) {
     if (queue[guildId][0] && url !== "next") {
       const songDetails = await ytdl.getBasicInfo(url);
@@ -305,15 +304,21 @@ Status: \`\` Playing \`\``
   message.member.voice.channel
     .join()
     .then(async (connection) => {
+      console.log("\n\n before:");
+      console.log(guildStorage);
       if (!guildStorage[guildId]) guildStorage[guildId] = { volume: 0.2 };
+      console.log("\n\n After:");
+      console.log(guildStorage);
 
+      console.log("\n\n");
+      console.log("url in join voice channel: ");
+      console.log(url);
       let stream = ytdl(url, {
         filter: "audioonly",
         quality: "highestaudio",
-        liveChunkReadahead: 20,
+        // liveChunkReadahead: 20,
         highWaterMark: 1 << 20,
       });
-      console.log(guildStorage);
       guildStorage[guildId].dispatcher = connection.play(stream, {
         highWaterMark: 80,
         volume: guildStorage[guildId].volume || 0.2,
@@ -390,11 +395,13 @@ Status: \`\` Playing \`\``
       if (
         guildStorage[guildId].dispatcher.volume &&
         guildStorage[guildId].dispatcher.volume > 0.1
-      ) {
+      )
         await guildStorage[guildId].dispatcher.setVolume(
           Math.round((guildStorage[guildId].dispatcher.volume - 0.1) * 10) / 10
         );
-      } else await guildStorage[guildId].dispatcher.setVolume(0);
+      else await guildStorage[guildId].dispatcher.setVolume(0);
+
+      guildStorage[guildId].volume = guildStorage[guildId].dispatcher.volume;
       song.content = song.content.split(`\`\``);
       song.content[1] = `${guildStorage[guildId].dispatcher.volume * 100}%`;
       song.content = song.content.join(`\`\``);
@@ -404,11 +411,12 @@ Status: \`\` Playing \`\``
       if (
         guildStorage[guildId].dispatcher.volume &&
         guildStorage[guildId].dispatcher.volume < 0.8
-      ) {
+      )
         await guildStorage[guildId].dispatcher.setVolume(
           Math.round((guildStorage[guildId].dispatcher.volume + 0.2) * 10) / 10
         );
-      } else await guildStorage[guildId].dispatcher.setVolume(1);
+      else await guildStorage[guildId].dispatcher.setVolume(1);
+      guildStorage[guildId].volume = guildStorage[guildId].dispatcher.volume;
       song.content = song.content.split(`\`\``);
       song.content[1] = `${guildStorage[guildId].dispatcher.volume * 100}%`;
       song.content = song.content.join(`\`\``);
