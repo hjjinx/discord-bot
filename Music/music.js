@@ -240,7 +240,8 @@ module.exports.streamSong = async (message) => {
     message.reply(`You must join a voice channel first!!`);
     return;
   }
-  let url = message.content.substr(8);
+  let url = message.content.split(" ");
+  url = url.slice(1).join(" ");
   const ytdl = require("ytdl-core");
   if (url.startsWith("http")) {
     await playStream(url, message);
@@ -255,9 +256,6 @@ module.exports.streamSong = async (message) => {
   for (let i = 0; i < urlArr.length; i++) {
     embed.addField(`${i + 1}: ${urlArr[i].title}`, urlArr[i].href);
   }
-  console.log("\n\n\n\n");
-  console.log(urlArr);
-  console.log("\n\n\n\n");
   message.channel.send({ embed }).then(async (msg) => {
     const reactions = [
       "\u0031\u20E3",
@@ -276,8 +274,6 @@ module.exports.streamSong = async (message) => {
         if (!collected.first()) return;
         const reaction = collected.first();
         url = urlArr[reactions.indexOf(reaction.emoji.name)];
-        console.log("url in collected reactions upon searching:");
-        console.log(url);
         playStream(url.href, message);
       });
 
@@ -325,9 +321,6 @@ Status: \`\` Playing \`\``
     .then(async (connection) => {
       if (!guildStorage[guildId]) guildStorage[guildId] = { volume: 0.2 };
 
-      console.log("\n\n");
-      console.log("url in join voice channel: ");
-      console.log(url);
       let stream = ytdl(url, {
         filter: "audioonly",
         quality: "highestaudio",

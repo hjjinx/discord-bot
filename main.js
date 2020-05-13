@@ -40,7 +40,7 @@ client.on("message", (message) => {
   else if (message.content.startsWith("/streamsb"))
     music.streamStarboy(message);
   else if (message.content.startsWith("/skip")) music.skip(message);
-  else if (message.content.startsWith("/stream")) music.streamSong(message);
+  else if (message.content.startsWith("/p")) music.streamSong(message);
   else if (message.content.startsWith("/pause")) music.pauseSong(message);
   else if (message.content.startsWith("/stop")) music.stopSong(message);
   else if (message.content.startsWith("/mute")) music.mute(message);
