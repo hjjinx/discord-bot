@@ -21,9 +21,18 @@ client.on("ready", () => {
 });
 
 client.on("message", (message) => {
+  if (message.author.tag === "boom boom#6330") return;
   if (!message.guild) return;
   if (!message.content.startsWith("/")) return;
-  else if (message.content.startsWith("/help")) help.index(message);
+
+  console.log(
+    message.author.tag +
+      " sent a message " +
+      (message.guild ? "in " + message.guild.name : "personally")
+  );
+  console.log("Content: " + message.content + "\n");
+
+  if (message.content.startsWith("/help")) help.index(message);
   else if (message.content.startsWith("/music")) music.playSong(message);
   else if (message.content.startsWith("/queue")) music.displayQueue(message);
   else if (message.content.startsWith("/streamahp"))

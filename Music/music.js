@@ -7,13 +7,14 @@ var song; // Current Playing song message
 var queue = {};
 var dispatchers = {};
 var skipMessageDeleteTimeout = {};
+var guildStorage = {};
 
 module.exports.pauseSong = async (message) => {
   const guildId = message.channel.guild.id;
   if (song) {
     song.content = song.content.split(`\`\``);
-    if (!dispatchers[guildId].paused) {
-      await dispatchers[guildId].pause();
+    if (!guildStorage[guildId].dispatcher.paused) {
+      await guildStorage[guildId].dispatcher.pause();
       song.content[3] = "Paused";
     }
     song.content = song.content.join(`\`\``);
@@ -26,8 +27,8 @@ module.exports.resumeSong = async (message) => {
   const guildId = message.channel.guild.id;
   if (song) {
     song.content = song.content.split(`\`\``);
-    if (dispatchers[guildId].paused) {
-      await dispatchers[guildId].resume();
+    if (guildStorage[guildId].dispatcher.paused) {
+      await guildStorage[guildId].dispatcher.resume();
       song.content[3] = "Playing";
     }
     song.content = song.content.join(`\`\``);
@@ -43,10 +44,10 @@ module.exports.changeVolume = (message) => {
     message.reply(`Volume must be between 0 and 100`);
     return;
   }
-  dispatchers[guildId].setVolume(content / 100);
+  guildStorage[guildId].dispatcher.setVolume(content / 100);
   if (song.content) {
     song.content = song.content.split(`\`\``);
-    song.content[1] = `${dispatchers[guildId].volume * 100}%`;
+    song.content[1] = `${guildStorage[guildId].dispatcher.volume * 100}%`;
     song.content = song.content.join(`\`\``);
     song.edit(song.content);
   }
@@ -55,8 +56,8 @@ module.exports.changeVolume = (message) => {
 
 module.exports.leaveChannel = (message) => {
   const guildId = message.channel.guild.id;
-  if (message.guild.me.voice.channel && dispatchers[guildId]) {
-    dispatchers[guildId].end();
+  if (message.guild.me.voice.channel && guildStorage[guildId].dispatcher) {
+    guildStorage[guildId].dispatcher.end();
     message.guild.me.voice.channel.leave();
   }
   message.delete();
@@ -64,8 +65,8 @@ module.exports.leaveChannel = (message) => {
 
 module.exports.mute = (message) => {
   const guildId = message.channel.guild.id;
-  if (song && dispatchers[guildId]) {
-    dispatchers[guildId].setVolume(0);
+  if (song && guildStorage[guildId].dispatcher) {
+    guildStorage[guildId].dispatcher.setVolume(0);
     song.content = song.content.split(`\`\``);
     song.content[3] = "Muted";
   }
@@ -174,7 +175,7 @@ const skip = async (message) => {
   if (queue[guildId] && queue[guildId][0]) {
     queue[guildId].shift();
     if (message.guild.me.voice.channel) {
-      if (song.content && dispatchers[guildId]) {
+      if (song.content && guildStorage[guildId].dispatcher) {
         song.content = song.content.split(`\`\``);
         song.content[3] = "Skipped";
       }
@@ -191,13 +192,13 @@ const stop = (message) => {
   const guildId = message.channel.guild.id;
   delete queue[guildId];
   if (message.guild.me.voice.channel) {
-    if (song.content && dispatchers[guildId]) {
-      song.content = song.content.split(`\`\``);
-      song.content[3] = "Stopped";
-    }
-    song.content = song.content.join(`\`\``);
-    song.edit(song.content);
-    dispatchers[guildId].end();
+    // if (song.content && guildStorage[guildId].dispatcher) {
+    //   song.content = song.content.split(`\`\``);
+    //   song.content[3] = "Stopped";
+    // }
+    // song.content = song.content.join(`\`\``);
+    // song.edit(song.content);
+    guildStorage[guildId].dispatcher.end();
     message.delete();
   }
 };
@@ -224,98 +225,107 @@ module.exports.displayQueue = (message) => {
 
 module.exports.streamSong = async (message) => {
   const guildId = message.channel.guild.id;
-  if (message.member.voice.channel) {
-    let url = message.content.substr(8);
-    const ytdl = require("ytdl-core");
-    if (url.startsWith("http")) {
-      await playStream(url, message);
-      return;
-    }
-    // If not a url, then search for the song on YouTube using youtubeApi.js
-    const yt = require("./youtubeApi");
-    let urlArr = await yt.search(url);
-    const embed = new Discord.MessageEmbed()
-      .setColor(0xfd0016)
-      .setTitle("Search Results Found: ");
-    for (let i = 0; i < urlArr.length; i++) {
-      embed.addField(
-        `${i + 1}: ${urlArr[i].title}`,
-        `https://youtube.com${urlArr[i].href}`
-      );
-    }
-    message.channel.send({ embed }).then(async (msg) => {
-      const reactions = [
-        "\u0031\u20E3",
-        "\u0032\u20E3",
-        "\u0033\u20E3",
-        "\u0034\u20E3",
-        "\u0035\u20E3",
-      ];
-      msg
-        .awaitReactions(
-          (reaction, user) =>
-            reactions.includes(reaction.emoji.name) && user.id != msg.author.id,
-          { max: 1, time: 20000 }
-        )
-        .then(async (collected) => {
-          if (!collected.first()) return;
-          const reaction = collected.first();
-          url = urlArr[reactions.indexOf(reaction.emoji.name)];
-          playStream(url.href, message);
-        });
+  if (!message.member.voice.channel) {
+    message.reply(`You must join a voice channel first!!`);
+    return;
+  }
+  let url = message.content.substr(8);
+  const ytdl = require("ytdl-core");
+  if (url.startsWith("http")) {
+    await playStream(url, message);
+    return;
+  }
+  // If not a url, then search for the song on YouTube using youtubeApi.js
+  const yt = require("./youtubeApi");
+  let urlArr = await yt.search(url);
+  const embed = new Discord.MessageEmbed()
+    .setColor(0xfd0016)
+    .setTitle("Search Results Found: ");
+  for (let i = 0; i < urlArr.length; i++) {
+    embed.addField(`${i + 1}: ${urlArr[i].title}`, urlArr[i].href);
+  }
+  message.channel.send({ embed }).then(async (msg) => {
+    const reactions = [
+      "\u0031\u20E3",
+      "\u0032\u20E3",
+      "\u0033\u20E3",
+      "\u0034\u20E3",
+      "\u0035\u20E3",
+    ];
+    msg
+      .awaitReactions(
+        (reaction, user) =>
+          reactions.includes(reaction.emoji.name) && user.id != msg.author.id,
+        { max: 1, time: 20000 }
+      )
+      .then(async (collected) => {
+        if (!collected.first()) return;
+        const reaction = collected.first();
+        url = urlArr[reactions.indexOf(reaction.emoji.name)];
+        playStream(url.href, message);
+      });
 
-      for (let i = 0; i < urlArr.length; i++) {
-        setTimeout(() => msg.react(reactions[i]), 10 * i);
-        // await msg.react(reactions[i]);
-      }
-    });
-  } else message.reply(`You must join a voice channel first!!`);
+    for (let i = 0; i < urlArr.length; i++) await msg.react(reactions[i]);
+  });
 };
 
 playStream = async (url, message) => {
   const guildId = message.channel.guild.id;
   const ytdl = require("ytdl-core");
-
-  if (queue[guildId] && queue[guildId][0] && url !== "next") {
-    const songDetails = await ytdl.getBasicInfo(url);
-    queue[guildId][1] = { url, title: songDetails.title };
-    message.reply(`Added \`\`${songDetails.title}\`\` to queue`);
-    return;
-  } else if (!queue[guildId]) {
+  console.log(queue);
+  if (queue[guildId]) {
+    if (queue[guildId][0] && url !== "next") {
+      const songDetails = await ytdl.getBasicInfo(url);
+      queue[guildId][1] = { url, title: songDetails.title };
+      message.reply(`Added \`\`${songDetails.title}\`\` to queue`);
+      return;
+    } else if (queue[guildId][0] && url === "next") {
+      url = queue[guildId][0].url;
+      const songDetails = await ytdl.getBasicInfo(url);
+      queue[guildId][0] = { url, title: songDetails.title };
+    } else {
+      const songDetails = await ytdl.getBasicInfo(url);
+      queue[guildId][0] = { url, title: songDetails.title };
+    }
+  } else {
     const songDetails = await ytdl.getBasicInfo(url);
     queue[guildId] = [{ url, title: songDetails.title }];
   }
 
-  if (url === "next") url = queue[guildId][0].url;
-
   const songDetails = await ytdl.getBasicInfo(url);
   song = await message.channel.send(
     `Playing :musical_note: ${songDetails.title} :musical_note: 
-Volume: \`\` 20% \`\`
+Volume: \`\` ${
+      guildStorage[guildId] ? guildStorage[guildId].volume * 100 : 20
+    }% \`\`
 Status: \`\` Playing \`\``
   );
   const reactions = [`⏹️`, `⏯`, "⏭", `🔄`, `🔈`, `🔊`];
-  for (reaction of reactions) await song.react(reaction);
   // Member will always be in a voice channel at this point.
   message.member.voice.channel
     .join()
     .then(async (connection) => {
-      dispatchers[guildId] = "";
+      if (!guildStorage[guildId]) guildStorage[guildId] = { volume: 0.2 };
+
       let stream = ytdl(url, {
         filter: "audioonly",
         quality: "highestaudio",
         liveChunkReadahead: 20,
         highWaterMark: 1 << 20,
       });
-      dispatchers[guildId] = connection.play(stream, { highWaterMark: 32 });
+      console.log(guildStorage);
+      guildStorage[guildId].dispatcher = connection.play(stream, {
+        highWaterMark: 80,
+        volume: guildStorage[guildId].volume || 0.2,
+      });
+      for (reaction of reactions) await song.react(reaction);
 
-      stream.on("error", console.log);
+      stream.on("error", console.error);
       // stream.on("data", console.log);
       // stream.on("progress", console.log);
       stream.on("end", () => console.log(`End of stream`));
 
-      dispatchers[guildId].setVolume(0.2);
-      dispatchers[guildId].on("finish", (end) => {
+      guildStorage[guildId].dispatcher.on("finish", (end) => {
         song.content = song.content.split(`\`\``);
         song.content[3] = "Ended";
         song.content = song.content.join(`\`\``);
@@ -329,6 +339,12 @@ Status: \`\` Playing \`\``
         }
         message.guild.me.voice.channel.leave();
       });
+      guildStorage[guildId].dispatcher.on("error", (err) =>
+        console.error("err in discord dispatcher: " + err)
+      );
+      guildStorage[guildId].dispatcher.on("warn", (err) =>
+        console.log("warn in discord dispatcher" + err)
+      );
     })
     .catch(console.error);
 
@@ -344,11 +360,11 @@ Status: \`\` Playing \`\``
       stop(message);
     } else if (index === 1) {
       song.content = song.content.split(`\`\``);
-      if (dispatchers[guildId].paused) {
-        await dispatchers[guildId].resume();
+      if (guildStorage[guildId].dispatcher.paused) {
+        await guildStorage[guildId].dispatcher.resume();
         song.content[3] = "Playing";
       } else {
-        await dispatchers[guildId].pause();
+        await guildStorage[guildId].dispatcher.pause();
         song.content[3] = "Paused";
       }
       song.content = song.content.join(`\`\``);
@@ -371,24 +387,30 @@ Status: \`\` Playing \`\``
       skip(message);
     } else if (index === 4) {
       // Decrease Volume
-      if (dispatchers[guildId].volume && dispatchers[guildId].volume > 0.1) {
-        await dispatchers[guildId].setVolume(
-          Math.round((dispatchers[guildId].volume - 0.1) * 10) / 10
+      if (
+        guildStorage[guildId].dispatcher.volume &&
+        guildStorage[guildId].dispatcher.volume > 0.1
+      ) {
+        await guildStorage[guildId].dispatcher.setVolume(
+          Math.round((guildStorage[guildId].dispatcher.volume - 0.1) * 10) / 10
         );
-      } else await dispatchers[guildId].setVolume(0);
+      } else await guildStorage[guildId].dispatcher.setVolume(0);
       song.content = song.content.split(`\`\``);
-      song.content[1] = `${dispatchers[guildId].volume * 100}%`;
+      song.content[1] = `${guildStorage[guildId].dispatcher.volume * 100}%`;
       song.content = song.content.join(`\`\``);
       song.edit(song.content);
     } else if (index === 5) {
       // Increase Volume
-      if (dispatchers[guildId].volume && dispatchers[guildId].volume < 0.8) {
-        await dispatchers[guildId].setVolume(
-          Math.round((dispatchers[guildId].volume + 0.2) * 10) / 10
+      if (
+        guildStorage[guildId].dispatcher.volume &&
+        guildStorage[guildId].dispatcher.volume < 0.8
+      ) {
+        await guildStorage[guildId].dispatcher.setVolume(
+          Math.round((guildStorage[guildId].dispatcher.volume + 0.2) * 10) / 10
         );
-      } else await dispatchers[guildId].setVolume(1);
+      } else await guildStorage[guildId].dispatcher.setVolume(1);
       song.content = song.content.split(`\`\``);
-      song.content[1] = `${dispatchers[guildId].volume * 100}%`;
+      song.content[1] = `${guildStorage[guildId].dispatcher.volume * 100}%`;
       song.content = song.content.join(`\`\``);
       song.edit(song.content);
     }

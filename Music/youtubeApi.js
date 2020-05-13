@@ -1,4 +1,4 @@
-module.exports.search = async function(query) {
+module.exports.search = async function (query) {
   const axios = require("axios");
   const cheerio = require("cheerio");
   const res = await axios.get(
@@ -15,7 +15,10 @@ module.exports.search = async function(query) {
   var urlArr = [];
   html = await $(`h3.yt-lockup-title`).each((i, elem) => {
     const child = elem.children[0];
-    urlArr.push({ href: child.attribs.href, title: child.attribs.title });
+    urlArr.push({
+      href: `https://youtube.com${child.attribs.href}`,
+      title: child.attribs.title,
+    });
 
     if (i == 4) return false;
   });
