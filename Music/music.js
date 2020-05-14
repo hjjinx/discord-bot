@@ -315,7 +315,6 @@ Status: \`\` Playing \`\``
     guildStorage[guildId] = { volume: 0.2, message: song };
   else guildStorage[guildId].message = song;
   const reactions = [`⏹️`, `⏯`, "⏭", `🔄`, `🔈`, `🔊`];
-  // Member will always be in a voice channel at this point.
   message.member.voice.channel
     .join()
     .then(async (connection) => {
@@ -336,7 +335,9 @@ Status: \`\` Playing \`\``
       stream.on("error", console.error);
       // stream.on("data", console.log);
       // stream.on("progress", console.log);
-      stream.on("end", () => console.log(`End of stream`));
+      stream.on("end", () =>
+        console.log(`YTDL has completely downloaded the song.`)
+      );
 
       guildStorage[guildId].dispatcher.on("finish", (end) => {
         song = guildStorage[guildId].message;
@@ -355,13 +356,19 @@ Status: \`\` Playing \`\``
         message.guild.me.voice.channel.leave();
       });
       guildStorage[guildId].dispatcher.on("error", (err) =>
-        console.error("err in discord dispatcher: " + err)
+        console.error("error in discord dispatcher: " + err)
       );
       guildStorage[guildId].dispatcher.on("warn", (err) =>
         console.log("warn in discord dispatcher" + err)
       );
     })
-    .catch(console.error);
+    .catch((err) => {
+      console.error(err);
+      message.guild.me.voice.channel.leave();
+      message.channel.send(
+        "Apologies! There was an error. Could you please write that command again? 🥺"
+      );
+    });
 
   collector = song.createReactionCollector(
     // Filter for collecting reactions. Only reactions passing through filter collected
