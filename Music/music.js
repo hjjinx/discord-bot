@@ -381,7 +381,17 @@ Status: \`\` Playing \`\``
     const index = reactions.indexOf(reaction.emoji.name);
     song = guildStorage[guildId].message;
     if (index === 0) {
-      stop(message);
+      const guildId = message.channel.guild.id;
+      song = guildStorage[guildId].message;
+      delete queue[guildId];
+      if (message.guild.me.voice.channel) {
+        guildStorage[guildId].dispatcher.end();
+        song.content = song.content.split(`\`\``);
+        song.content[3] = "Stopped";
+        song.content = song.content.join(`\`\``);
+        song.edit(song.content);
+        guildStorage[guildId].collector.stop();
+      }
     } else if (index === 1) {
       song.content = song.content.split(`\`\``);
       if (guildStorage[guildId].dispatcher.paused) {
