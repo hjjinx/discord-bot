@@ -13,7 +13,7 @@ const words = require("./Words/words.js");
 client.on("ready", () => {
   client.user.setPresence({
     status: "online",
-    activity: { name: "message /help" },
+    activity: { name: "Under development. Please wait :)" },
   });
   console.log(
     `Logged in as ${client.user.tag}!\nVersion Running: ${Discord.version}`
@@ -22,7 +22,6 @@ client.on("ready", () => {
 
 client.on("message", (message) => {
   if (message.author.tag === "boom boom#6330") return;
-  if (!message.guild) return;
   if (!message.content.startsWith("/")) return;
 
   console.log(

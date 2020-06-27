@@ -320,19 +320,40 @@ Status: \`\` Playing \`\``
     .then(async (connection) => {
       if (!guildStorage[guildId]) guildStorage[guildId] = { volume: 0.2 };
 
-      let stream = ytdl(url, {
+      let info = await ytdl.getInfo(url, {
         filter: "audioonly",
         quality: "highestaudio",
         // liveChunkReadahead: 20,
         highWaterMark: 1 << 20,
       });
+      console.log(info);
+      let stream = ytdl(url, {
+        filter: "audioonly",
+        quality: "highestaudio",
+        // liveChunkReadahead: 20,
+      });
       guildStorage[guildId].dispatcher = connection.play(stream, {
-        highWaterMark: 80,
         volume: guildStorage[guildId].volume || 0.2,
       });
       for (reaction of reactions) await song.react(reaction);
 
-      stream.on("error", console.error);
+      stream.on("error", (err) => {
+        console.log(err);
+
+        const guildId = message.channel.guild.id;
+        song = guildStorage[guildId].message;
+        delete queue[guildId];
+        if (message.guild.me.voice.channel) {
+          guildStorage[guildId].dispatcher.end();
+          song.content = song.content.split(`\`\``);
+          song.content[3] = "Errored :(";
+          song.content = song.content.join(`\`\``);
+          song.edit(song.content);
+          guildStorage[guildId].collector.stop();
+        }
+
+        message.channel.send("Apologies! There was an error 🥺");
+      });
       // stream.on("data", console.log);
       // stream.on("progress", console.log);
       stream.on("end", () =>
