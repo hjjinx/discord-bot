@@ -6,6 +6,7 @@ var search = async function (query, attemptNum = 1) {
       query
     )}&sp=EgIQAQ%253D%253D`
   );
+  // console.log(res);
   let html = res.data;
   const htmlparser = require("htmlparser2");
   const hh = htmlparser.parseDOM(html);
@@ -23,33 +24,34 @@ var search = async function (query, attemptNum = 1) {
   });
 
   // YouTube changed the way that they returned their HTML. Will fix later.
-  // const jsdom = require("jsdom");
-  // const { JSDOM } = jsdom;
+  const jsdom = require("jsdom");
+  const { JSDOM } = jsdom;
   // const document = new JSDOM(html, {
   //   runScripts: "dangerously",
   //   resources: "usable",
   // });
   // // console.log(document.serialize());
 
-  // JSDOM.fromURL(
-  //   `https://www.youtube.com/results?search_query=${encodeURIComponent(
-  //     query
-  //   )}&sp=EgIQAQ%253D%253D`,
-  //   {
-  //     runScripts: "dangerously",
-  //     resources: "usable",
-  //   }
-  // ).then((dom) => {
-  //   console.log(dom.serialize());
-  // });
+  JSDOM.fromURL(
+    `https://www.youtube.com/results?search_query=${encodeURIComponent(
+      query
+    )}&sp=EgIQAQ%253D%253D`,
+    {
+      resources: "usable",
+      runScripts: "dangerously",
+    }
+  ).then((dom) => {
+    console.log(dom.serialize());
+  });
 
   // Temporary fix until then..
   // Will keep sending request to YouTube for search results,
   // until YouTube sends the results in the older method
   // Or, until we reach 100 tries
-  while (urlArr.length === 0 || attemptNum < 100) {
-    urlArr = search(query, ++attemptNum);
-  }
+  // while (urlArr.length === 0 || attemptNum < 100) {
+  //   console.log("retries..");
+  //   urlArr = await search(query, ++attemptNum);
+  // }
 
   return urlArr;
 };
