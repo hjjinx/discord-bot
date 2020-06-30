@@ -249,6 +249,7 @@ module.exports.streamSong = async (message) => {
   }
   // If not a url, then search for the song on YouTube using youtubeApi.js
   const yt = require("./youtubeApi");
+  message.channel.send("Searching. Please wait! :)");
   let urlArr = await yt.search(url);
   const embed = new Discord.MessageEmbed()
     .setColor(0xfd0016)
