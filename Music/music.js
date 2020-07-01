@@ -249,39 +249,36 @@ module.exports.streamSong = async (message) => {
   }
   // If not a url, then search for the song on YouTube using youtubeApi.js
   const yt = require("./youtubeApi");
-  message.channel.send(
-    "Please paste the full link of the song. The search feature is under development. Apologies for any inconvenience caused! 🥺"
-  );
-  // let urlArr = await yt.search(url);
-  // const embed = new Discord.MessageEmbed()
-  //   .setColor(0xfd0016)
-  //   .setTitle("Search Results Found: ");
-  // for (let i = 0; i < urlArr.length; i++) {
-  //   embed.addField(`${i + 1}: ${urlArr[i].title}`, urlArr[i].href);
-  // }
-  // message.channel.send({ embed }).then(async (msg) => {
-  //   const reactions = [
-  //     "\u0031\u20E3",
-  //     "\u0032\u20E3",
-  //     "\u0033\u20E3",
-  //     "\u0034\u20E3",
-  //     "\u0035\u20E3",
-  //   ];
-  //   msg
-  //     .awaitReactions(
-  //       (reaction, user) =>
-  //         reactions.includes(reaction.emoji.name) && user.id != msg.author.id,
-  //       { max: 1, time: 20000 }
-  //     )
-  //     .then(async (collected) => {
-  //       if (!collected.first()) return;
-  //       const reaction = collected.first();
-  //       url = urlArr[reactions.indexOf(reaction.emoji.name)];
-  //       playStream(url.href, message);
-  //     });
+  let urlArr = await yt.search(url);
+  const embed = new Discord.MessageEmbed()
+    .setColor(0xfd0016)
+    .setTitle("Search Results Found: ");
+  for (let i = 0; i < urlArr.length; i++) {
+    embed.addField(`${i + 1}: ${urlArr[i].title}`, urlArr[i].href);
+  }
+  message.channel.send({ embed }).then(async (msg) => {
+    const reactions = [
+      "\u0031\u20E3",
+      "\u0032\u20E3",
+      "\u0033\u20E3",
+      "\u0034\u20E3",
+      "\u0035\u20E3",
+    ];
+    msg
+      .awaitReactions(
+        (reaction, user) =>
+          reactions.includes(reaction.emoji.name) && user.id != msg.author.id,
+        { max: 1, time: 20000 }
+      )
+      .then(async (collected) => {
+        if (!collected.first()) return;
+        const reaction = collected.first();
+        url = urlArr[reactions.indexOf(reaction.emoji.name)];
+        playStream(url.href, message);
+      });
 
-  //   for (let i = 0; i < urlArr.length; i++) await msg.react(reactions[i]);
-  // });
+    for (let i = 0; i < urlArr.length; i++) await msg.react(reactions[i]);
+  });
 };
 
 playStream = async (url, message) => {

@@ -1,4 +1,4 @@
-var search = async function (query, attemptNum = 1) {
+var search = async function (query) {
   const axios = require("axios");
   const cheerio = require("cheerio");
   const res = await axios.get(
@@ -6,11 +6,10 @@ var search = async function (query, attemptNum = 1) {
       query
     )}&sp=EgIQAQ%253D%253D`
   );
-  // console.log(res);
   let html = res.data;
   const htmlparser = require("htmlparser2");
   const hh = htmlparser.parseDOM(html);
-  const $ = cheerio.load(hh);
+  const $ = cheerio.load(html, { xmlMode: true });
 
   var urlArr = [];
   html = await $(`h3.yt-lockup-title`).each((i, elem) => {
@@ -23,35 +22,44 @@ var search = async function (query, attemptNum = 1) {
     if (i == 4) return false;
   });
 
-  // YouTube changed the way that they returned their HTML. Will fix later.
-  const jsdom = require("jsdom");
-  const { JSDOM } = jsdom;
-  // const document = new JSDOM(html, {
-  //   runScripts: "dangerously",
-  //   resources: "usable",
-  // });
-  // // console.log(document.serialize());
+  if (urlArr.length === 0) {
+    let script = await $("script").get()[26].children[0].data;
 
-  JSDOM.fromURL(
-    `https://www.youtube.com/results?search_query=${encodeURIComponent(
-      query
-    )}&sp=EgIQAQ%253D%253D`,
-    {
-      resources: "usable",
-      runScripts: "dangerously",
+    var badJson = script.substr(30, script.length - 140);
+
+    const json5 = require("json5");
+
+    var correctJson = badJson.replace(/\n/g, "");
+    correctJson = json5.parse(correctJson);
+
+    let results =
+      correctJson.contents.twoColumnSearchResultsRenderer.primaryContents
+        .sectionListRenderer.contents[0].itemSectionRenderer.contents;
+
+    // videoId
+    for (let i = 0; i < 5; i++) {
+      urlArr.push({
+        href: "https://youtube.com/watch?v=" + results[i].videoRenderer.videoId,
+        title: results[i].videoRenderer.title.runs[0].text,
+      });
     }
-  ).then((dom) => {
-    console.log(dom.serialize());
-  });
+    // console.log(
+    //   "https://youtube.com/watch?v=" + results[0].videoRenderer.videoId
+    // );
 
-  // Temporary fix until then..
-  // Will keep sending request to YouTube for search results,
-  // until YouTube sends the results in the older method
-  // Or, until we reach 100 tries
-  // while (urlArr.length === 0 || attemptNum < 100) {
-  //   console.log("retries..");
-  //   urlArr = await search(query, ++attemptNum);
-  // }
+    // // thumbnail
+    // console.log(
+    //   results[0].videoRenderer.thumbnail.thumbnails[
+    //     results[0].videoRenderer.thumbnail.thumbnails.length - 1
+    //   ].url
+    // );
+
+    // // Title
+    // console.log(results[0].videoRenderer.title.runs[0].text);
+
+    // // Channel name
+    // console.log(results[0].videoRenderer.longBylineText.runs[0].text);
+  }
 
   return urlArr;
 };
