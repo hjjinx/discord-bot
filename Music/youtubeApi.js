@@ -7,8 +7,6 @@ var search = async function (query) {
     )}&sp=EgIQAQ%253D%253D`
   );
   let html = res.data;
-  const htmlparser = require("htmlparser2");
-  const hh = htmlparser.parseDOM(html);
   const $ = cheerio.load(html, { xmlMode: true });
 
   var urlArr = [];
@@ -37,7 +35,12 @@ var search = async function (query) {
         .sectionListRenderer.contents[0].itemSectionRenderer.contents;
 
     // videoId
-    for (let i = 0; i < 5; i++) {
+    let showingSearchInsteadFor = results[0].showingResultsForRenderer;
+    for (
+      let i = showingSearchInsteadFor ? 1 : 0;
+      i < (showingSearchInsteadFor ? 6 : 5);
+      i++
+    ) {
       urlArr.push({
         href: "https://youtube.com/watch?v=" + results[i].videoRenderer.videoId,
         title: results[i].videoRenderer.title.runs[0].text,
