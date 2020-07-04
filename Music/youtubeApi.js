@@ -21,24 +21,20 @@ var search = async function (query) {
   });
 
   if (urlArr.length === 0) {
-    let script = await $("script").get()[26].children[0].data;
-
-    var badJson = script.substr(30, script.length - 140);
-
-    const json5 = require("json5");
-
-    var correctJson = badJson.replace(/\n/g, "");
-    correctJson = json5.parse(correctJson);
-
-    let results =
-      correctJson.contents.twoColumnSearchResultsRenderer.primaryContents
+    html = $.html();
+    const startIndex = html.indexOf(`window["ytInitialData"]`) + 26;
+    const endIndex = html.indexOf(`window["ytInitialPlayerResponse"]`) - 6;
+    const length = endIndex - startIndex;
+    const content = JSON.parse(html.substr(startIndex, length));
+    const results =
+      content.contents.twoColumnSearchResultsRenderer.primaryContents
         .sectionListRenderer.contents[0].itemSectionRenderer.contents;
 
-    // videoId
-    let showingSearchInsteadFor = results[0].showingResultsForRenderer;
+    let firstIndexIsNotResults =
+      results[0].showingResultsForRenderer || results[0].searchPyvRenderer;
     for (
-      let i = showingSearchInsteadFor ? 1 : 0;
-      i < (showingSearchInsteadFor ? 6 : 5);
+      let i = firstIndexIsNotResults ? 1 : 0;
+      i < (firstIndexIsNotResults ? 6 : 5);
       i++
     ) {
       urlArr.push({
@@ -46,6 +42,8 @@ var search = async function (query) {
         title: results[i].videoRenderer.title.runs[0].text,
       });
     }
+
+    // // videoId
     // console.log(
     //   "https://youtube.com/watch?v=" + results[0].videoRenderer.videoId
     // );

@@ -326,7 +326,6 @@ Status: \`\` Playing \`\``
         // liveChunkReadahead: 20,
         highWaterMark: 1 << 20,
       });
-      console.log(info);
       let stream = ytdl(url, {
         filter: "audioonly",
         quality: "highestaudio",
@@ -445,13 +444,13 @@ Status: \`\` Playing \`\``
       if (
         guildStorage[guildId].dispatcher.volume &&
         guildStorage[guildId].dispatcher.volume > 0.1
-      )
+      ) {
         await guildStorage[guildId].dispatcher.setVolume(
           Math.round((guildStorage[guildId].dispatcher.volume - 0.1) * 10) / 10
         );
-      else await guildStorage[guildId].dispatcher.setVolume(0);
+        guildStorage[guildId].volume = guildStorage[guildId].dispatcher.volume;
+      } else await guildStorage[guildId].dispatcher.setVolume(0);
 
-      guildStorage[guildId].volume = guildStorage[guildId].dispatcher.volume;
       song.content = song.content.split(`\`\``);
       song.content[1] = `${guildStorage[guildId].dispatcher.volume * 100}%`;
       song.content = song.content.join(`\`\``);
@@ -461,12 +460,12 @@ Status: \`\` Playing \`\``
       if (
         guildStorage[guildId].dispatcher.volume &&
         guildStorage[guildId].dispatcher.volume < 0.8
-      )
+      ) {
         await guildStorage[guildId].dispatcher.setVolume(
           Math.round((guildStorage[guildId].dispatcher.volume + 0.2) * 10) / 10
         );
-      else await guildStorage[guildId].dispatcher.setVolume(1);
-      guildStorage[guildId].volume = guildStorage[guildId].dispatcher.volume;
+        guildStorage[guildId].volume = guildStorage[guildId].dispatcher.volume;
+      } else await guildStorage[guildId].dispatcher.setVolume(1);
       song.content = song.content.split(`\`\``);
       song.content[1] = `${guildStorage[guildId].dispatcher.volume * 100}%`;
       song.content = song.content.join(`\`\``);
