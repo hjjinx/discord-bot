@@ -52,7 +52,7 @@ module.exports.changeVolume = (message) => {
   }
   song = guildStorage[guildId].message;
   guildStorage[guildId].dispatcher.setVolume(content / 100);
-  guildStorage[guildId].volume = parseFloat(content);
+  guildStorage[guildId].volume = parseFloat(content / 100);
   if (song.content) {
     song.content = song.content.split(`\`\``);
     song.content[1] = `${guildStorage[guildId].dispatcher.volume * 100}%`;
@@ -284,6 +284,9 @@ module.exports.streamSong = async (message) => {
 playStream = async (url, message) => {
   const guildId = message.channel.guild.id;
   const ytdl = require("ytdl-core");
+
+  if (!guildStorage[guildId]) guildStorage[guildId] = { volume: 0.2 };
+
   if (queue[guildId]) {
     if (queue[guildId][0] && url !== "next") {
       const songDetails = await ytdl.getBasicInfo(url);
@@ -311,9 +314,9 @@ Volume: \`\` ${
     }% \`\`
 Status: \`\` Playing \`\``
   );
-  if (!guildStorage[guildId])
-    guildStorage[guildId] = { volume: 0.2, message: song };
-  else guildStorage[guildId].message = song;
+
+  guildStorage[guildId].message = song;
+
   const reactions = [`⏹️`, `⏯`, "⏭", `🔄`, `🔈`, `🔊`];
   message.member.voice.channel
     .join()
