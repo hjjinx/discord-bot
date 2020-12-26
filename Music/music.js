@@ -307,8 +307,9 @@ playStream = async (url, message) => {
   }
 
   const songDetails = await ytdl.getBasicInfo(url);
+  console.log(songDetails);
   song = await message.channel.send(
-    `Playing :musical_note: ${songDetails.title} :musical_note: 
+    `Playing :musical_note: ${songDetails.videoDetails.title} :musical_note: 
 Volume: \`\` ${
       guildStorage[guildId] ? guildStorage[guildId].volume * 100 : 20
     }% \`\`

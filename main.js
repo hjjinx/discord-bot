@@ -10,10 +10,10 @@ const help = require("./Help/help.js");
 const weather = require("./Weather/weather.js");
 const words = require("./Words/words.js");
 
-client.on("ready", () => {
+client.once("ready", () => {
   client.user.setPresence({
     status: "online",
-    activity: { name: "Under development. Please wait :)" },
+    activity: { name: "I'm back bitchezz" },
   });
   console.log(
     `Logged in as ${client.user.tag}!\nVersion Running: ${Discord.version}`
@@ -56,3 +56,16 @@ client.on("message", (message) => {
 });
 
 client.login(token);
+
+// "@discordjs/opus": "^0.1.0",
+// "axios": "^0.19.0",
+// "canvas": "^2.6.1",
+// "cheerio": "^1.0.0-rc.3",
+// "discord.js": "^12.0.2",
+// "ffmpeg-static": "^4.0.1",
+// "htmlparser2": "^4.0.0",
+// "jsdom": "^16.2.2",
+// "json5": "^2.1.3",
+// "nodemon": "^2.0.2",
+// "request": "^2.88.0",
+// "ytdl-core": "^2.1.7"

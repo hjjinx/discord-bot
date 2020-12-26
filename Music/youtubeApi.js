@@ -22,10 +22,11 @@ var search = async function (query) {
 
   if (urlArr.length === 0) {
     html = $.html();
-    const startIndex = html.indexOf(`window["ytInitialData"]`) + 26;
-    const endIndex = html.indexOf(`window["ytInitialPlayerResponse"]`) - 6;
-    const length = endIndex - startIndex;
-    const content = JSON.parse(html.substr(startIndex, length));
+    const startIndex = html.indexOf(`var ytInitialData = `) + 20;
+    html = html.substr(startIndex);
+    const endIndex = html.indexOf(`;</script>`);
+    html = html.substr(0, endIndex);
+    const content = JSON.parse(html);
     const results =
       content.contents.twoColumnSearchResultsRenderer.primaryContents
         .sectionListRenderer.contents[0].itemSectionRenderer.contents;
